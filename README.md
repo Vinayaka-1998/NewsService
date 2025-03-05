@@ -27,11 +27,7 @@ Actions
 * Tap on a News Cell:
     * If sourceId is present, navigates to the Detail Screen.
     * If sourceId is missing, an alert appears with the message: Details not found.
-API Key Placeholder
-Developers should place the API key inside the Constants.swift file:
-struct Constants {
-    static let apiKey = "YOUR_API_KEY_HERE" // Replace with your API Key
-}
+
 How to Run the Project
 1. Clone the repository: git clone https://github.com/Vinayaka-1998/NewsService.git
 2. Open NewsService.xcodeproj in Xcode.
