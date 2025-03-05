@@ -1,5 +1,5 @@
 //
-//  NewsViewController.swift
+//  NewsDetailViewController.swift
 //  NewsService
 //
 //  Created by Vinayaka Vasukeesha(UST,IN) on 04/03/25.
@@ -7,14 +7,15 @@
 
 import UIKit
 
-class NewsViewController: UIViewController {
+class NewsDetailViewController: UIViewController {
     
     // MARK: - UI Components
+    
+    var source: String = ""
     
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = "US Top Headlines"
         label.font = UIFont.boldSystemFont(ofSize: 20)
         label.textAlignment = .center
         return label
@@ -53,12 +54,7 @@ class NewsViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupBindings()
-        
-        // Fetch news (example: US top headlines)
-        viewModel.fetchTopHeadlinesByCountry(country: "us")
-        
-        // To switch to BBC News source instead, use:
-        // viewModel.fetchTopHeadlinesBySource(source: "bbc-news")
+        viewModel.fetchTopHeadlinesBySource(source: source)
     }
     
     // MARK: - UI Setup
@@ -98,6 +94,11 @@ class NewsViewController: UIViewController {
         tableView.refreshControl = refreshControl
     }
     
+    func fetchDertaisOfSource(source: String, sourceName: String) {
+        self.source = source
+        self.titleLabel.text = sourceName
+    }
+    
     // MARK: - Bindings
     private func setupBindings() {
         // Update UI when articles are fetched
@@ -127,7 +128,7 @@ class NewsViewController: UIViewController {
         viewModel.fetchTopHeadlinesByCountry(country: "us")
     }
     
-    // Switch to a different news source (could be called from a button or menu)
+    // Switch to a different news source.
     func switchToSource(source: String) {
         viewModel.fetchTopHeadlinesBySource(source: source)
     }
@@ -152,7 +153,7 @@ class NewsViewController: UIViewController {
 }
 
 // MARK: - UITableView DataSource
-extension NewsViewController: UITableViewDataSource {
+extension NewsDetailViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return viewModel.articles.count
     }
@@ -164,33 +165,27 @@ extension NewsViewController: UITableViewDataSource {
         
         let article = viewModel.articles[indexPath.row]
         cell.configure(with: article)
+        viewModel.loadImageWithNetworkFirstCaching(from: article.urlToImage ?? "") { image in
+            cell.newsImageView.image = image ?? UIImage(systemName: "newspaper")
+        }
         cell.delegate = self
-        // Set URL tapped action
-//        cell.onUrlTapped = { [weak self] in
-//            guard let self = self else { return }
-//            self.openWebPage(for: article)
-//        }
         
         return cell
     }
 }
 
 // MARK: - UITableView Delegate
-extension NewsViewController: UITableViewDelegate {
+extension NewsDetailViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return UITableView.automaticDimension
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        
-        //let article = viewModel.articles[indexPath.row]
-        // Open article detail view or webview
-        //openWebPage(for: article)
     }
 }
 
-extension NewsViewController: UrlTappedProtocol {
+extension NewsDetailViewController: UrlTappedProtocol {
     func onUrlTapped(url: String) {
         openWebPage(for: url)
     }

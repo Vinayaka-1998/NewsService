@@ -7,7 +7,7 @@
 
 enum APIConstants {
     static let baseURL = "https://newsapi.org/v2"
-    static let apiKey = "0381130d30f84e81ad1885cc7d2294c2"
+    static var apiKey = ""
     
     enum Endpoints {
         static let topHeadlines = "/top-headlines"

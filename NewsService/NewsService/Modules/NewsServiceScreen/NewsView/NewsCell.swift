@@ -15,7 +15,20 @@ protocol UrlTappedProtocol: AnyObject {
 class NewsTableViewCell: UITableViewCell {
     // MARK: - UI Components
     weak var delegate: UrlTappedProtocol?
-    private let newsImageView: UIImageView = {
+    private let containerView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .white
+        view.layer.cornerRadius = 10
+        view.layer.shadowColor = UIColor.black.cgColor
+        view.layer.shadowOffset = CGSize(width: 0, height: 2)
+        view.layer.shadowRadius = 4
+        view.layer.shadowOpacity = 0.2
+        view.layer.masksToBounds = false
+        return view
+    }()
+    
+        let newsImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.contentMode = .scaleAspectFill
@@ -80,11 +93,15 @@ class NewsTableViewCell: UITableViewCell {
     
     // MARK: - UI Setup
     private func setupCell() {
-        contentView.addSubview(newsImageView)
-        contentView.addSubview(titleLabel)
-        contentView.addSubview(authorLabel)
-        contentView.addSubview(descriptionLabel)
-        contentView.addSubview(urlLabel)
+        // Remove direct subview additions and add containerView
+        contentView.addSubview(containerView)
+        
+        // Add subviews to containerView
+        containerView.addSubview(newsImageView)
+        containerView.addSubview(titleLabel)
+        containerView.addSubview(authorLabel)
+        containerView.addSubview(descriptionLabel)
+        containerView.addSubview(urlLabel)
         
         // Add tap gesture for URL label
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(urlLabelTapped))
@@ -92,34 +109,41 @@ class NewsTableViewCell: UITableViewCell {
         
         // Apply constraints
         NSLayoutConstraint.activate([
+            // Container view constraints - 16 padding on all sides
+            containerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
+            containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
+            
             // Image view constraints - square image on the left
-            newsImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            newsImageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
+            newsImageView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            newsImageView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
             newsImageView.widthAnchor.constraint(equalToConstant: 70),
             newsImageView.heightAnchor.constraint(equalToConstant: 70),
             
             // Title label constraints
             titleLabel.leadingAnchor.constraint(equalTo: newsImageView.trailingAnchor, constant: 12),
-            titleLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
-            titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            titleLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
+            titleLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
             
             // Author label constraints
             authorLabel.leadingAnchor.constraint(equalTo: newsImageView.trailingAnchor, constant: 12),
             authorLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
-            authorLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            authorLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
             
             // Description label constraints
             descriptionLabel.leadingAnchor.constraint(equalTo: newsImageView.trailingAnchor, constant: 12),
             descriptionLabel.topAnchor.constraint(equalTo: authorLabel.bottomAnchor, constant: 4),
-            descriptionLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            descriptionLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
             
             // URL label constraints
             urlLabel.leadingAnchor.constraint(equalTo: newsImageView.trailingAnchor, constant: 12),
             urlLabel.topAnchor.constraint(equalTo: descriptionLabel.bottomAnchor, constant: 6),
-            urlLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            urlLabel.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -12)
+            urlLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            urlLabel.bottomAnchor.constraint(lessThanOrEqualTo: containerView.bottomAnchor, constant: -12)
         ])
-    }
+   }
+
     
     override func prepareForReuse() {
         super.prepareForReuse()
@@ -143,68 +167,22 @@ class NewsTableViewCell: UITableViewCell {
         authorLabel.text = article.author ?? "Unknown Author"
         descriptionLabel.text = article.description ?? "No description available"
         urlLabel.text = article.url
-        
-        // Load image if available
-        if let imageUrlString = article.urlToImage, let imageUrl = URL(string: imageUrlString) {
-            loadImage(from: imageUrl)
-        } else {
-            // Set a placeholder image
-            newsImageView.image = UIImage(systemName: "newspaper")
-        }
     }
     
-    private func loadImage(from url: URL) {
-        // Simple image loading for demonstration
-        // In a real app, use a proper image loading library like Kingfisher or SDWebImage
-        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
-            guard let data = data, let image = UIImage(data: data) else {
-                DispatchQueue.main.async {
-                    self?.newsImageView.image = UIImage(systemName: "newspaper")
-                }
-                return
-            }
-            
-            DispatchQueue.main.async {
-                self?.newsImageView.image = image
-            }
-        }.resume()
-    }
-}
-
-// MARK: - Section Header View (Unchanged)
-class NewsSectionHeaderView: UITableViewHeaderFooterView {
-    static let identifier = "NewsSectionHeaderView"
-    
-    private let titleLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = UIFont.boldSystemFont(ofSize: 16)
-        return label
-    }()
-    
-    override init(reuseIdentifier: String?) {
-        super.init(reuseIdentifier: reuseIdentifier)
-        setupView()
-    }
-    
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        setupView()
-    }
-    
-    private func setupView() {
-        contentView.backgroundColor = .systemGray6
-        contentView.addSubview(titleLabel)
-        
-        NSLayoutConstraint.activate([
-            titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            titleLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
-            titleLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8)
-        ])
-    }
-    
-    func configure(with title: String) {
-        titleLabel.text = title
-    }
+//    private func loadImage(from url: URL) {
+//        // Simple image loading for demonstration
+//        // In a real app, use a proper image loading library like Kingfisher or SDWebImage
+//        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+//            guard let data = data, let image = UIImage(data: data) else {
+//                DispatchQueue.main.async {
+//                    self?.newsImageView.image = UIImage(systemName: "newspaper")
+//                }
+//                return
+//            }
+//            
+//            DispatchQueue.main.async {
+//                self?.newsImageView.image = image
+//            }
+//        }.resume()
+//    }
 }
